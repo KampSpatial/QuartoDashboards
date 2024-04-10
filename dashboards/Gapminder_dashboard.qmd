@@ -6,7 +6,7 @@ format:
     embed-resources: true
 theme: 
   - yeti
-  - styles.scss
+  - ../styles/styles.scss
 ---
 
 ```{r}

@@ -6,7 +6,7 @@ format:
     embed-resources: true
 theme: 
   - minty
-  - styles.scss
+  - ../styles/styles.scss
 ---
 
 ```{r}
