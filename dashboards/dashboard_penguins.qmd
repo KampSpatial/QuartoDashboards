@@ -3,12 +3,12 @@ title: "Palmer Penguins"
 author: "Quinten Sandberg"
 format: 
   dashboard:
-    css: styles.css
+    css: styles/styles.css
     embed-resources: true
-logo: penguins.png
+logo: !expr here::here("logos/penguins.png")
 theme: 
   - zephyr
-  - styles.scss
+  - styles/styles.scss
 ---
 
 ```{r}

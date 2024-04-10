@@ -18,7 +18,7 @@ library(plotly)
 library(gt)
 
 # import data
-health_data <- read.csv("/Users/quinten/Downloads/Sleep_health_and_lifestyle_dataset.csv")
+health_data <- read.csv("../data/Sleep_health_and_lifestyle_dataset.csv")
 
 # Set theme
 theme_set(theme_minimal())
