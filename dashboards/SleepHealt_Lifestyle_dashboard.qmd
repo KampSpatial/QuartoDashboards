@@ -1,0 +1,134 @@
+---
+title: "Sleep Health and Lifestyle"
+author: "Quinten Sandberg"
+format: 
+  dashboard:
+    embed-resources: true
+theme: 
+  - minty
+  - styles.scss
+---
+
+```{r}
+# import packages
+library(tidyverse)
+library(crosstalk)
+library(DT)
+library(plotly)
+library(gt)
+
+# import data
+health_data <- read.csv("/Users/quinten/Downloads/Sleep_health_and_lifestyle_dataset.csv")
+
+# Set theme
+theme_set(theme_minimal())
+```
+
+# {.sidebar}
+
+This is a simple static dashboard to show what is possible with the newest version of [Quarto v1.4](https://quarto.org/docs/blog/posts/2024-01-24-1.4-release/). To make it a bit interactive we use the [crosstalk](https://github.com/rstudio/crosstalk) package and [plotly](https://plotly.com/r/).
+
+In this dashboard we show the Sleep Health and Lifestyle from professionals. In the table below is some basic information about the data:
+
+| Feature      |  Count              |
+|--------------|---------------------|
+| **Male**     | `{r} nrow(subset(health_data, Gender == "Male"))`      |
+| **Female**   | `{r} nrow(subset(health_data, Gender == "Female"))`    |
+| **Avg Age**  | `{r} round(mean(health_data$Age), 1)`                  |
+
+***
+
+```{r}
+sd <- SharedData$new(health_data)
+sd_df <- SharedData$new(health_data, key = ~Gender)
+filter_checkbox("gender", "Choose gender:", sd, ~Gender)
+```
+
+***
+
+::: {.callout-note collapse="true"}
+## Note
+The data is synthetic so it is **not real!**
+:::
+
+# Analysis
+
+## Row {height=20%}
+
+```{r}
+#| content: valuebox
+#| title: "Total number of participants"
+list(
+  icon = "people",
+  color = "info",
+  value = nrow(sd$data())
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Average sleep"
+list(
+  icon = "clock",
+  color = "success",
+  value = paste0(round(mean(health_data$Sleep.Duration), 2), "h")
+)
+```
+
+## Row {height=45%}
+
+```{r}
+#| title: "Heatmap BMI Category against Occupation"
+health_data_agg <- health_data %>%
+  group_by(BMI.Category, Occupation) %>%
+  summarise(n = n())
+ggplotly(
+  ggplot(data = health_data_agg, aes(x = BMI.Category, y = Occupation, fill = n)) +
+    geom_tile() +
+    scale_fill_gradient(low = "lightblue", high = "darkblue")
+)
+```
+
+### Column {.tabset}
+
+```{r}
+#| title: "Stress level against Sleep duration"
+ggplotly(
+  ggplot(data = sd, aes(x = Stress.Level, y = Sleep.Duration, color = Gender)) +
+    geom_point()
+)
+```
+
+```{r}
+#| title: "Average sleep duration per occupation"
+ggplotly(
+  ggplot(data = health_data %>%
+           group_by(Occupation, Gender) %>%
+           reframe(mean_sleep = mean(Sleep.Duration)), aes(x = mean_sleep, y = Occupation, fill = Gender)) +
+    geom_col(position = "dodge")
+)
+```
+
+## row {height=35%} 
+
+```{r}
+#| title: "Average scores per Occupation and gender"
+health_data %>%
+  group_by(Gender, Occupation) %>%
+  summarise(across(c(Age, Sleep.Duration:Stress.Level, Heart.Rate, Daily.Steps), ~ round(mean(.x), 2))) %>%
+  gt()
+```
+
+
+# Table
+
+In the table below you can search in the dataset.
+
+```{r}
+datatable(sd)
+```
+
+
+# Source
+
+> In this dashboard we show the Sleep Health and Lifestyle from professionals. The data is from [Kaggle](https://www.kaggle.com/datasets/uom190346a/sleep-health-and-lifestyle-dataset) which is synthetic created. 
