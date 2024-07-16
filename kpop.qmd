@@ -1,0 +1,207 @@
+---
+title: "KenPop"
+format: dashboard
+---
+
+```{r}
+#| echo: false
+library(rKenyaCensus)
+library(sf)
+library(ggmap)
+library(purrr)
+library(tidyr)
+library(scales)
+library(gt)
+library(dplyr)
+library(stringr)
+library(leaflet)
+register_google(key = "AIzaSyDGiV9aNwcsgIfZv7wYmVoiCwu_q4JMJ_Q")
+
+ke_summary <- V1_T2.1
+
+# Remove brackets and their contents
+ke_summary$Indicator <- gsub("\\s*\\([^\\)]+\\)", "", ke_summary$Indicator)
+
+# Update the value of the "Male" row by multiplying by 1000
+ke_summary$Value[ke_summary$Indicator == "Population Size"] <- ke_summary$Value[ke_summary$Indicator == "Population Size"] * 1000
+ke_summary$Value[ke_summary$Indicator == "Male"] <- ke_summary$Value[ke_summary$Indicator == "Male"] * 1000
+ke_summary$Value[ke_summary$Indicator == "Female"] <- ke_summary$Value[ke_summary$Indicator == "Female"] * 1000
+ke_summary$Value[ke_summary$Indicator == "Inter Sex"] <- ke_summary$Value[ke_summary$Indicator == "Inter Sex"] * 1000
+ke_summary$Value[ke_summary$Indicator == "Number of Households"] <- ke_summary$Value[ke_summary$Indicator == "Number of Households"] * 1000
+
+
+county_summary <- V1_T2.2 %>%
+  slice(2:48) %>%
+  mutate(County = str_trim(County)) %>%
+  mutate(County = str_to_lower(str_replace_all(County, " ", "")))
+
+
+```
+
+# Sidebar {.sidebar}
+
+The Kenya Population Visualizer is an interactive web application designed to provide insightful visualizations of Kenya's population data based on the official 2019 census and future projections.
+
+**Objectives:**
+
+1.  **Interactive Exploration**: Users can interact with dynamic charts, maps, and graphs to explore population statistics across various regions, age groups, and genders.
+
+2.  **Comparative Analysis**: The app allows users to compare population data from 2019 with projections for upcoming years, helping to identify trends and patterns.
+
+3.  **Customizable Views**: Users can customize visualizations to focus on specific counties, demographic segments, or time periods.
+
+4.  **Informative Insights**: By providing detailed and up-to-date population data, the app aims to support policy makers, researchers, and the public in making informed decisions and understanding demographic changes in Kenya.
+
+The app's interactivity ensures a user-friendly experience, making complex data easily accessible and understandable.
+
+# National
+
+### Column {width="20%"}
+
+```{r}
+#| content: valuebox
+#| title: "Total Pop"
+
+Popizzo <- subset(ke_summary, Indicator == "Population Size")
+list(
+  icon = "newspaper",
+  color = "danger",
+  value = comma(Popizzo$Value)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Number of Households"
+
+HNo <- subset(ke_summary, Indicator == "Number of Households")
+list(
+  icon = "newspaper",
+  color = "danger",
+  value = comma(HNo$Value)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Average Household Size"
+
+HH <- subset(ke_summary, Indicator == "Average Household Size")
+list(
+  icon = "newspaper",
+  color = "warning",
+  value = comma(HH$Value)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Population Density"
+
+PopD <- subset(ke_summary, Indicator == "Population Density")
+list(
+  icon = "newspaper",
+  color = "warning",
+  value = PopD$Value
+)
+```
+
+## Row {height="80%"}
+
+### Column {width="80%"}
+
+```{r}
+#| echo: false
+#| width: 70%
+
+counties <- rKenyaCensus::KenyaCounties_SHP
+
+# Convert to sf class
+counties_sf <- st_as_sf(counties)
+
+# Transform to CRS 4326 (WGS84)
+counties_transformed <- st_transform(counties_sf, crs = 4326) %>% 
+  st_make_valid()
+
+leaflet() %>%
+  addProviderTiles("CartoDB.Positron") %>%  # Choose your preferred tile provider
+  addPolygons(
+    data = counties_transformed,
+    color = "blue",               # Outline color of polygons
+    fillColor = "blue",           # Fill color of polygons
+    fillOpacity = 0.4,            # Opacity of polygon fill
+    weight = 1,                   # Stroke width for polygon outlines
+    opacity = 1,                  # Opacity of polygon outlines
+    popup = ~paste("<b>County:</b> ", County)  # Popup content for polygons
+    )
+```
+
+# Counties
+### Column {width="20%"}
+
+```{r}
+#| content: valuebox
+#| title: "No. of Counties"
+
+kauntz <- nrow(county_summary)
+list(
+  icon = "newspaper",
+  color = "danger",
+  value = kauntz
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Number of Males"
+
+Males <- comma(sum(county_summary$Male))
+list(
+  icon = "newspaper",
+  color = "danger",
+  value = Males
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Number of Females"
+
+Females <- comma(sum(county_summary$Female))
+list(
+  icon = "newspaper",
+  color = "warning",
+  value = Females
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "No. of Intersex"
+
+Intersex <- comma(sum(county_summary$Intersex))
+list(
+  icon = "newspaper",
+  color = "warning",
+  value = Intersex
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Total Population"
+
+Total <- comma(sum(county_summary$Total))
+list(
+  icon = "newspaper",
+  color = "warning",
+  value = Total
+)
+```
+## Row {height="80%"}
+
+### Column {width="80%"}
+
+# Sub Counties
+
+# Wards
